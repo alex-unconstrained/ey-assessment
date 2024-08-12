@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
 import {
   PieChart,
   Pie,
@@ -145,12 +147,28 @@ const formatDate = (dateString) => {
 };
 
 const AssessmentForm = () => {
-  const [students, setStudents] = useState(initialStudents);
+  const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [formData, setFormData] = useState({});
   const [editMode, setEditMode] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [recentChanges, setRecentChanges] = useState({});
+  const [newStudentName, setNewStudentName] = useState('');
+  const [newStudentBirthday, setNewStudentBirthday] = useState('');
+  const [newStudentInfo, setNewStudentInfo] = useState('');
+
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  const fetchStudents = async () => {
+    try {
+      const response = await axios.get('/api/students');
+      setStudents(response.data.students);
+    } catch (error) {
+      console.error('Error fetching students:', error);
+    }
+  };
 
   useEffect(() => {
     if (selectedStudent) {
@@ -195,7 +213,7 @@ const AssessmentForm = () => {
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (selectedStudent) {
       const updatedStudents = students.map((student) =>
         student.id === selectedStudent.id
@@ -208,8 +226,53 @@ const AssessmentForm = () => {
         assessmentData: formData,
         image: imagePreview,
       });
-      console.log('Saving data for', selectedStudent.name, formData);
-      alert('Data saved successfully!');
+      
+      try {
+        await axios.post('/api/students', { students: updatedStudents });
+        console.log('Saving data for', selectedStudent.name, formData);
+        alert('Data saved successfully!');
+      } catch (error) {
+        console.error('Error saving data:', error);
+        alert('Error saving data. Please try again.');
+      }
+    }
+  };
+
+  const handleAddStudent = async () => {
+    if (newStudentName && newStudentBirthday) {
+      const newStudent = {
+        id: Date.now(),
+        name: newStudentName,
+        birthday: newStudentBirthday,
+        info: newStudentInfo,
+      };
+      const updatedStudents = [...students, newStudent];
+      
+      try {
+        await axios.post('/api/students', { students: updatedStudents });
+        setStudents(updatedStudents);
+        setNewStudentName('');
+        setNewStudentBirthday('');
+        setNewStudentInfo('');
+      } catch (error) {
+        console.error('Error adding student:', error);
+        alert('Error adding student. Please try again.');
+      }
+    }
+  };
+
+  const handleRemoveStudent = async (id) => {
+    const updatedStudents = students.filter(student => student.id !== id);
+    
+    try {
+      await axios.post('/api/students', { students: updatedStudents });
+      setStudents(updatedStudents);
+      if (selectedStudent && selectedStudent.id === id) {
+        setSelectedStudent(null);
+      }
+    } catch (error) {
+      console.error('Error removing student:', error);
+      alert('Error removing student. Please try again.');
     }
   };
 
