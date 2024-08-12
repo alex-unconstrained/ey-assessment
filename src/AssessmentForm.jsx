@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-
 import {
   PieChart,
   Pie,
@@ -94,39 +93,6 @@ const assessmentGuidelines = {
   ],
 };
 
-const initialStudents = [
-  {
-    id: 1,
-    name: 'Alice Johnson',
-    birthday: '2020-05-15',
-    info: 'Loves drawing, allergic to dairy',
-  },
-  {
-    id: 2,
-    name: 'Bob Smith',
-    birthday: '2020-11-03',
-    info: 'Enjoys building blocks, working on sharing',
-  },
-  {
-    id: 3,
-    name: 'Charlie Brown',
-    birthday: '2020-02-20',
-    info: 'Very talkative, learning to sit still',
-  },
-  {
-    id: 4,
-    name: 'Diana Lee',
-    birthday: '2021-01-10',
-    info: 'Quiet, excels in puzzles',
-  },
-  {
-    id: 5,
-    name: 'Ethan Davis',
-    birthday: '2020-08-22',
-    info: 'Energetic, loves outdoor play',
-  },
-];
-
 const calculateAge = (birthday) => {
   const today = new Date();
   const birthDate = new Date(birthday);
@@ -164,7 +130,7 @@ const AssessmentForm = () => {
   const fetchStudents = async () => {
     try {
       const response = await axios.get('/api/students');
-      setStudents(response.data.students);
+      setStudents(response.data.students || []);
     } catch (error) {
       console.error('Error fetching students:', error);
     }
@@ -254,10 +220,13 @@ const AssessmentForm = () => {
         setNewStudentName('');
         setNewStudentBirthday('');
         setNewStudentInfo('');
+        alert('Student added successfully!');
       } catch (error) {
         console.error('Error adding student:', error);
         alert('Error adding student. Please try again.');
       }
+    } else {
+      alert('Please enter at least a name and birthday for the new student.');
     }
   };
 
@@ -270,6 +239,7 @@ const AssessmentForm = () => {
       if (selectedStudent && selectedStudent.id === id) {
         setSelectedStudent(null);
       }
+      alert('Student removed successfully!');
     } catch (error) {
       console.error('Error removing student:', error);
       alert('Error removing student. Please try again.');
@@ -351,11 +321,34 @@ const AssessmentForm = () => {
 
   return (
     <div style={{ maxWidth: '800px', margin: 'auto', padding: '20px' }}>
-      <h1
-        style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px' }}
-      >
+      <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px' }}>
         Comprehensive Early Childhood Assessment
       </h1>
+
+      <div style={{ marginBottom: '20px' }}>
+        <h2>Add New Student</h2>
+        <input
+          type="text"
+          placeholder="Student Name"
+          value={newStudentName}
+          onChange={(e) => setNewStudentName(e.target.value)}
+          style={{ marginRight: '10px' }}
+        />
+        <input
+          type="date"
+          value={newStudentBirthday}
+          onChange={(e) => setNewStudentBirthday(e.target.value)}
+          style={{ marginRight: '10px' }}
+        />
+        <input
+          type="text"
+          placeholder="Additional Info"
+          value={newStudentInfo}
+          onChange={(e) => setNewStudentInfo(e.target.value)}
+          style={{ marginRight: '10px' }}
+        />
+        <button onClick={handleAddStudent}>Add Student</button>
+      </div>
 
       <div style={{ marginBottom: '16px' }}>
         <label htmlFor="student-select">Select Student: </label>
@@ -418,145 +411,143 @@ const AssessmentForm = () => {
               </p>
             </div>
           )}
+          <button onClick={() => handleRemoveStudent(selectedStudent.id)}>
+            Remove Student
+          </button>
         </div>
       )}
 
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginBottom: '16px',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: '16px',
-          }}
-        >
-          <div style={{ width: '48%' }}>
-            <h3>Overall Assessment</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={getDataForPieChart()}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {getDataForPieChart().map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div style={{ width: '48%' }}>
-            <h3>Development Profile</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <RadarChart
-                cx="50%"
-                cy="50%"
-                outerRadius="80%"
-                data={getDataForSpiderChart()}
-              >
-                <PolarGrid />
-                <PolarAngleAxis dataKey="skill" />
-                <PolarRadiusAxis angle={30} domain={[0, 3]} />
-                <Radar
-                  name="Skills"
-                  dataKey="score"
-                  stroke="#8884d8"
-                  fill="#8884d8"
-                  fillOpacity={0.6}
-                />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '16px',
-          marginBottom: '16px',
-        }}
-      >
-        {headers.map((header) => (
+      {selectedStudent && (
+        <div>
           <div
-            key={header}
             style={{
-              border: '1px solid #ccc',
-              padding: '10px',
-              borderRadius: '5px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginBottom: '16px',
             }}
           >
-            <h3>{header}</h3>
-            <ul style={{ paddingLeft: '20px', marginBottom: '10px' }}>
-              {assessmentGuidelines[header].map((guideline, index) => (
-                <li
-                  key={index}
-                  style={{ fontSize: '12px', marginBottom: '5px' }}
+            <div style={{ width: '48%' }}>
+              <h3>Overall Assessment</h3>
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie
+                    data={getDataForPieChart()}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {getDataForPieChart().map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div style={{ width: '48%' }}>
+              <h3>Development Profile</h3>
+		          <ResponsiveContainer width="100%" height={200}>
+                <RadarChart
+                  cx="50%"
+                  cy="50%"
+                  outerRadius="80%"
+                  data={getDataForSpiderChart()}
                 >
-                  {guideline}
-                </li>
-              ))}
-            </ul>
-            <select
-              value={formData[header]?.value || ''}
-              onChange={(e) => handleAssessmentChange(header, e.target.value)}
-              style={{ width: '100%', marginBottom: '5px' }}
-            >
-              <option value="">Select...</option>
-              <option value="Advanced">Advanced</option>
-              <option value="Age Appropriate">Age Appropriate</option>
-              <option value="Needs Support">Needs Support</option>
-              <option value="Other">Other</option>
-            </select>
-            {formData[header]?.value === 'Other' && (
-              <input
-                type="text"
-                placeholder="Specify other..."
-                value={formData[header]?.otherValue || ''}
-                onChange={(e) => handleOtherInputChange(header, e.target.value)}
-                style={{ width: '100%', marginTop: '5px' }}
-              />
-            )}
-            <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
-              Last updated:{' '}
-              {formData[header]?.lastUpdated
-                ? new Date(formData[header].lastUpdated).toLocaleString()
-                : 'Not yet updated'}
-            </p>
-            {formData[header]?.previousValue && (
-              <p style={{ fontSize: '12px', color: '#666' }}>
-                Previous rating: {formData[header].previousValue}
-                (Changed:{' '}
-                {new Date(formData[header].previousUpdateTime).toLocaleString()}
-                )
-              </p>
-            )}
+                  <PolarGrid />
+                  <PolarAngleAxis dataKey="skill" />
+                  <PolarRadiusAxis angle={30} domain={[0, 3]} />
+                  <Radar
+                    name="Skills"
+                    dataKey="score"
+                    stroke="#8884d8"
+                    fill="#8884d8"
+                    fillOpacity={0.6}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        ))}
-      </div>
 
-      <button
-        onClick={handleSave}
-        disabled={!selectedStudent}
-        style={{ marginBottom: '20px' }}
-      >
-        Save Assessment
-      </button>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '16px',
+              marginBottom: '16px',
+            }}
+          >
+            {headers.map((header) => (
+              <div
+                key={header}
+                style={{
+                  border: '1px solid #ccc',
+                  padding: '10px',
+                  borderRadius: '5px',
+                }}
+              >
+                <h3>{header}</h3>
+                <ul style={{ paddingLeft: '20px', marginBottom: '10px' }}>
+                  {assessmentGuidelines[header].map((guideline, index) => (
+                    <li
+                      key={index}
+                      style={{ fontSize: '12px', marginBottom: '5px' }}
+                    >
+                      {guideline}
+                    </li>
+                  ))}
+                </ul>
+                <select
+                  value={formData[header]?.value || ''}
+                  onChange={(e) => handleAssessmentChange(header, e.target.value)}
+                  style={{ width: '100%', marginBottom: '5px' }}
+                >
+                  <option value="">Select...</option>
+                  <option value="Advanced">Advanced</option>
+                  <option value="Age Appropriate">Age Appropriate</option>
+                  <option value="Needs Support">Needs Support</option>
+                  <option value="Other">Other</option>
+                </select>
+                {formData[header]?.value === 'Other' && (
+                  <input
+                    type="text"
+                    placeholder="Specify other..."
+                    value={formData[header]?.otherValue || ''}
+                    onChange={(e) => handleOtherInputChange(header, e.target.value)}
+                    style={{ width: '100%', marginTop: '5px' }}
+                  />
+                )}
+                <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
+                  Last updated:{' '}
+                  {formData[header]?.lastUpdated
+                    ? new Date(formData[header].lastUpdated).toLocaleString()
+                    : 'Not yet updated'}
+                </p>
+                {formData[header]?.previousValue && (
+                  <p style={{ fontSize: '12px', color: '#666' }}>
+                    Previous rating: {formData[header].previousValue}
+                    (Changed:{' '}
+                    {new Date(formData[header].previousUpdateTime).toLocaleString()}
+                    )
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={handleSave}
+            style={{ marginBottom: '20px' }}
+          >
+            Save Assessment
+          </button>
+        </div>
+      )}
 
       <div style={{ textAlign: 'center', fontSize: '12px', color: '#666' }}>
         Powered by UnconstrainED
